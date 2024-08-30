@@ -1,0 +1,93 @@
+[general]
+logdir=C:\temp\bold
+testerid = vanmierlo development system
+log_csv = yes
+log_text = yes
+stamp_delay = 1
+barcode_length = 15
+
+[Keysight 34970A]
+gpib_address = 4
+
+[Keysight E36103A]
+usb_pid=1
+usb_vid=2
+
+[serial dut]
+comport = COM11
+
+[led analyser]
+comport = COM14
+enabled = true
+
+[bluetooth]
+comport = COM12
+test_enable = true
+dummy_scan_time = 5
+scan_timeout = 3
+rssi_min = -45
+scan_device = TN 027000000
+num_scans = 3
+
+[firmware]
+program_app = yes
+nrfjprog_path = C:\Program Files (x86)\Nordic Semiconductor\nrf-command-line-tools\bin
+firmware_path = C:\projects\BOLD_SecureLock\Firmware
+hex_app = sesam-firmware-complete-v61.hex
+
+
+[led]
+led_analyzer_enable = true
+# setting for led analyser
+brightness_level = 0
+# delay between colors
+led2led_delay = 0.5
+
+# max accepted RGB value while led is OFF
+off_max = 50
+# max accepted light intensity while led is OFF
+off_intensity_max = 1000
+
+# red ON and RGB min value
+red_min = 200
+# green ON and RGB min value
+green_min = 200
+
+# while red or green ON, intensity in below limits
+intensity_min = 7000
+intensity_max = 80000
+
+[microphone]
+enabled = true
+min_db_delta = 20.0
+
+[limits]
+startup_current_max = 50.0
+startup_voltage_min = 2.8
+battery_voltage_fw_min = 2800.0
+battery_voltage_fw_max = 3100.0
+
+motor_lr_current_min_abs = 95.0
+motor_lr_psu_current_min = 110.0
+motor_disable_psu_current_max = 1.0
+
+accelero_x_min = -1000
+accelero_x_max = 1000
+accelero_y_min = -1000
+accelero_y_max = 1000
+accelero_z_min = -1000
+accelero_z_max = 21000
+accelero_voltage_on_min = -10.0
+accelero_voltage_off_max = 10.0
+
+magneto_val1_min = -10000
+magneto_val1_max = 10000
+magneto_val2_min = -10000
+magneto_val2_max = 10000
+magneto_voltage_on_min = -10.0
+magneto_voltage_off_max = 10.0
+
+[security]
+program_security = yes
+keys_file = C:\projects\BOLD_SecureLock\Firmware\devicekeys_example_09042020.csv
+model_and_type = 0x01010000

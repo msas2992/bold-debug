@@ -1,0 +1,81 @@
+'''
+Created on Apr 20, 2018
+
+@author: PhilipsRefurb Tester
+'''
+from pprint import pprint
+
+from settings.settings import CascadedSettings
+
+
+class SettingsGeneral(CascadedSettings):
+    def __init__(self, inifile=''):
+        self.inifile = inifile
+
+    # read settings from settings.ini file
+    def get_settings(self):
+        self.readSettings()
+        try:
+            self.general = {}
+            self.general['logdir'] = self.get('general', 'logdir')
+            self.general['testerid'] = self.get('general', 'testerid')
+            self.general['log_csv'] = self.getboolean('general', 'log_csv')
+            self.general['log_text'] = self.getboolean('general', 'log_text')
+
+            self.general['stamp_delay'] = self.getfloat('general', 'stamp_delay')
+            self.general['barcode_length'] = self.getint('general', 'barcode_length')
+
+            self.serial_dut = {}
+            self.serial_dut['comport'] = self.get('serial dut', 'comport')
+
+            self.serial_led = {}
+            self.serial_led['comport'] = self.get('led analyser', 'comport')
+            self.serial_led['enabled'] = self.getboolean('led analyser', 'enabled')
+
+            self.psu = {}
+            self.psu['vid'] = self.get('Keysight E36103A', 'usb_vid')
+            self.psu['pid'] = self.get('Keysight E36103A', 'usb_pid')
+            # self.psu['current_max'] = self.getfloat('psu', 'current_max')
+
+            self.dmm = {}
+            self.dmm['address'] = self.getint('Keysight 34970A', 'gpib_address')
+
+            self.idle = {}
+            self.idle['delay'] = self.getfloat('idle', 'delay')
+            self.idle['standby_current_min'] = self.getfloat('idle', 'standby_current_min')
+            self.idle['standby_current_max'] = self.getfloat('idle', 'standby_current_max')
+
+            self.ble = {}
+            self.ble['comport'] = self.get('bluetooth', 'comport')
+            self.ble['test_enable'] = self.getboolean('bluetooth', 'test_enable')
+            self.ble['dummy_scan_time'] = self.getfloat('bluetooth', 'dummy_scan_time')
+            self.ble['rssi_min'] = self.getfloat('bluetooth', 'rssi_min')
+            self.ble['scan_timeout'] = self.getfloat('bluetooth', 'scan_timeout')
+            self.ble['num_scans'] = self.getint('bluetooth', 'num_scans')
+            self.ble['scan_device'] = self.get('bluetooth', 'scan_device')
+
+            self.firmware = {}
+            self.firmware['nrfjprog_path'] = self.get('firmware', 'nrfjprog_path')
+            self.firmware['firmware_path'] = self.get('firmware', 'firmware_path')
+            self.firmware['hex_test'] = self.get('firmware', 'hex_test')
+            self.firmware['hex_app'] = self.get('firmware', 'hex_app')
+            self.firmware['1V8_bckp_min'] = self.getfloat('firmware', '1v8_bckp_min')
+            self.firmware['1V8_bckp_max'] = self.getfloat('firmware', '1v8_bckp_max')
+            self.firmware['program_test'] = self.getboolean('firmware', 'program_test')
+            self.firmware['program_app'] = self.getboolean('firmware', 'program_app')
+
+            self.ledtest = {}
+            self.ledtest['analyzer_enable'] = self.getboolean('led', 'led_analyzer_enable')
+            self.ledtest['brightness_level'] = self.getint('led', 'brightness_level')
+            self.ledtest['led2led_delay'] = self.getfloat('led', 'led2led_delay')
+            self.ledtest['limits'] = {}
+            _uileds_limits = ['off_max', 'off_intensity_max',
+                              'red_min', 'green_min',  'intensity_min', 'intensity_max']
+            for key in _uileds_limits:
+                self.ledtest['limits'][key] = self.getint('led', key)
+
+        except Exception as e:      # all errors, capture exception in e
+            print(e)
+            return (False, str(e))  # return exception type 'e'
+
+        return (True, None)

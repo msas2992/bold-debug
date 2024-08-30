@@ -1,0 +1,62 @@
+[{'address': '67:01:51:8F:17:93',
+  'name': '',
+  'packet_data': {'connectable_advertisement_packet': {'flags': bytearray(b'\x1a'),
+                                                       'manufacturer_specific_data': bytearray(b'L\x00\x10\x06'
+                                                                                               b'^\x1e\xe3\xb7'
+                                                                                               b'P%'),
+                                                       'tx_power_level': bytearray(b'\x0c')},
+                  'scan_response_packet': {}},
+  'rssi': -56},
+ {'address': 'EE:64:98:19:5A:3A',
+  'name': '',
+  'packet_data': {'connectable_advertisement_packet': {'flags': bytearray(b'\x06'),
+                                                       'manufacturer_specific_data': bytearray(b'[\x06\x02\x01'
+                                                                                               b'\x02\xb3\x18\x00'
+                                                                                               b'\x00\x00\x00\x00'
+                                                                                               b'\x00\x04')},
+                  'scan_response_packet': {'complete_list_128-bit_service_class_uuids': ['0x6E:40:00:01:B5:A3:F3:93:E0:A9:E5:0E:24:DC:CA:9E']}},
+  'rssi': -39},
+ {'address': '59:F8:94:20:26:D8',
+  'name': '',
+  'packet_data': {'connectable_advertisement_packet': {'flags': bytearray(b'\x1a'),
+                                                       'manufacturer_specific_data': bytearray(b'L\x00\x10\x05'
+                                                                                               b'N\x1c\xfd\xff'
+                                                                                               b'\t'),
+                                                       'tx_power_level': bytearray(b'\x0c')},
+                  'scan_response_packet': {}},
+  'rssi': -39},
+ {'address': '6E:D5:F4:66:30:B1',
+  'name': '',
+  'packet_data': {'discoverable_advertisement_packet': {'complete_list_16-bit_service_class_uuids': bytearray(b'\x9f\xfe'),
+                                                        'service_data/service_data-16-bit_uuid': bytearray(b'\x9f\xfe\x00\x00'
+                                                                                                           b'\x00\x00\x00\x00'
+                                                                                                           b'\x00\x00\x00\x00'
+                                                                                                           b'\x00\x00\x00\x00'
+                                                                                                           b'\x00\x00\x00\x00'
+                                                                                                           b'\x00\x00')},
+                  'scan_response_packet': {'manufacturer_specific_data': bytearray(b'\xe0\x00on'
+                                                                                   b'\xca\x81\xcc%')}},
+  'rssi': -67},
+ {'address': '4A:47:16:9B:90:75',
+  'name': '',
+  'packet_data': {'connectable_advertisement_packet': {'flags': bytearray(b'\x06'),
+                                                       'manufacturer_specific_data': bytearray(b'L\x00\x10\x05'
+                                                                                               b'\x0f\x1c\xe4\xc7'
+                                                                                               b'\xbb')},
+                  'scan_response_packet': {}},
+  'rssi': -65},
+ {'address': '49:5D:17:3E:1B:C4',
+  'name': '',
+  'packet_data': {'discoverable_advertisement_packet': {'complete_list_16-bit_service_class_uuids': bytearray(b'\x9f\xfe'),
+                                                        'service_data/service_data-16-bit_uuid': bytearray(b'\x9f\xfe\x00\x00'
+                                                                                                           b'\x00\x00\x00\x00'
+                                                                                                           b'\x00\x00\x00\x00'
+                                                                                                           b'\x00\x00\x00\x00'
+                                                                                                           b'\x00\x00\x00\x00'
+                                                                                                           b'\x00\x00')},
+                  'scan_response_packet': {'manufacturer_specific_data': bytearray(b'\xe0\x00om'
+                                                                                   b'\xca\x99\xa4\x18')}},
+  'rssi': -81}]
+Bold lock EE:64:98:19:5A:3A -39
+iPad 59:F8:94:20:26:D8 -39
+PS C:\projects\pne19>

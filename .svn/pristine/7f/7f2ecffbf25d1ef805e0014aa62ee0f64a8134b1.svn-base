@@ -1,0 +1,146 @@
+'''
+Created on 30 mei 2017
+
+@author: e.schaeffer
+'''
+import sys
+import time
+
+import visa
+
+
+class Keysight_E36103A():
+    def __init__(self):
+        self.handle = None
+        self.high_range = False
+
+    # check instruments connected to VISA return the USB vd,pid instrument
+    # return the instrument name
+    def find_usb_instrument(self, vid, pid):
+        try:
+            rm = visa.ResourceManager()
+            instruments = rm.list_resources()
+        except:
+            return None
+
+        for instr in instruments:
+            if 'USB' in instr:
+                if str(vid) in instr and str(pid) in instr:
+                    return instr
+
+        return None
+
+    # check for proper USB instrument connected and set handle
+    def connect_usb(self, vid, pid):
+        instr = self.find_usb_instrument(vid, pid)
+
+        if instr is not None:
+            try:
+                #self.handle = visa.Instrument(instr)
+                rm = visa.ResourceManager()
+                self.handle = rm.open_resource(instr)
+            except:
+                print('Error connecting E36103 PSU')
+                return False
+        else:
+            print('ERROR, no E36103 PSU found')
+            return False
+        return True
+
+
+    # send command to instrument
+    # read response
+    def Query(self,command = '*IDN?'):
+        self.handle.write(command)
+        time.sleep(0.1)     # recovery time
+        return self.handle.read()
+
+
+    # reset all channels to 'OPEN'
+    def Reset(self):
+        self.handle.write('*RST')                   # reset instrument all switches 'OPEN'
+        self.handle.write('*CLS')                   # reset errors
+
+
+    def Output_On(self):
+            self.handle.write('OUTP:STATE ON')
+
+    def Output_Off(self):
+            self.handle.write('OUTP:STATE OFF')
+
+    def Set_High_Range(self,rng=True):
+        if rng == True :
+            self.handle.write('SOUR:VOLT:RANG P30V')
+            self.high_range = True
+        else :
+            self.handle.write('SOUR:VOLT:RANG P15V')
+            self.high_range = False
+
+
+    # set the output voltage
+    def Volt(self,volts = 0.0):
+        if (volts <= 15.0) :
+            self.handle.write('SOUR:VOLT:LEV %2.3f'%volts)
+        elif volts <= 30 :
+            if self.high_range == False :
+                self.Set_High_Range(True)
+            self.handle.write('SOUR:VOLT:LEV %2.3f'%volts)
+        else :
+            print >> sys.stderr,'E3632A Voltage out of range %2.3f'%volts
+
+    # set the max output current
+    def Amp(self,amps = 0):
+        if ((self.high_range == True and amps <= 4) or \
+                (self.high_range == False and amps <= 7)) :
+            self.handle.write('SOUR:CURR:LEV %2.3f'%amps)
+        else :
+            print >> sys.stderr,'E3632A Current out of range %2.3f'%amps
+
+    # set protection voltage
+    def Volt_Protection(self,volts = 5.0):
+        if volts <= 30 :
+            self.handle.write('SOUR:VOLT:PROT:LEV %2.3f'%volts)
+            self.handle.write('SOUR:VOLT:PROT:STATE ON')
+        else :
+            print >> sys.stderr,'E3632A protection Voltage out of range %2.3f'%volts
+
+    # return True when OverVoltaged
+    def Volt_Tripped(self):
+        if self.Query('SOUR:VOLT:TRIP?') == '1' :
+            return True
+        else :
+            return False
+
+    # reset overvoltage trip
+    def Volt_Trip_Reset(self):
+            self.handle.write('SOUR:VOLT:PROT:CLEAR')
+
+    # return actual current
+    def Measure_Volts(self):
+        return float(self.Query('MEAS:VOLT?'))
+
+
+    # set protection current
+    def Amp_Protection(self,amps=1.0):
+        if ((self.high_range == True and amps <= 4.0) or \
+                (self.high_range == False and amps <= 7.0)) :
+            self.handle.write('SOUR:CURR:PROT:LEV %2.3f'%amps)
+            self.handle.write('SOUR:CURR:PROT:STATE ON')
+
+        else :
+            print >> sys.stderr,'E3632A Protection Current out of range %2.3f'%amps
+
+    # return True when OverCurrentTripped
+    def Amp_Tripped(self):
+        if self.Query('SOUR:AMP:TRIP?') == '1' :
+            return True
+        else :
+            return False
+
+    # reset overcurrent trip
+    def Amp_Trip_Reset(self):
+        self.handle.write('SOUR:AMP:PROT:CLEAR')
+
+    # return actual current
+    def Measure_Amps(self):
+        return float(self.Query('MEAS:CURR?'))

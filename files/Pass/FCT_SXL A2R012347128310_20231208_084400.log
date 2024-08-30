@@ -1,0 +1,77 @@
+Test Software version 20231207-deviate
+Test started at: Fri Dec  8 08:42:51 2023
+jig 24V: 23.3V
+jig temperature: 26.1degC
+Switching PSU to 3.0V / 2.0A
+  voltage: 3.0V  PASS
+  current: 0.7mA  PASS
+Programming application firmware    
+  unlocking    PASS
+  programming bold-firmware-rev3-v137-complete.hex    PASS
+Power-ON Reset
+  reset processor PASS
+DUT firmware version: 137  PASS
+battery voltage
+  firmware: 2982mV
+  dmm:      2998mV
+enable_motor_left OK
+  voltage:     -2.67V
+  current:     -106.8mA    PASS
+  psu current: 117.2mA    PASS
+enable_motor_right OK
+  voltage:     2.67V
+  current:     106.8mA    PASS
+  psu current: 117.1mA    PASS
+disable_motor OK
+  voltage:     0.00V
+  current:     0.0mA    PASS
+  psu current: 0.5mA    PASS
+accelerometer
+  voltage: 3.0V  PASS
+  x: 0    PASS
+  y: -128    PASS
+  z: 16592    PASS
+magnetometer
+  voltage: 0.1V  PASS
+  val1: 372    PASS
+  val2: -445    PASS
+button
+  not pressed: 0  PASS
+  pressed:     1  PASS
+  not pressed: 0  PASS
+buzzer
+  on:    167.6 dB  PASS
+  off:   114.1 dB
+  delta: 53.4 dB  PASS
+LEDs
+  red
+     1: 254, 001, 000, 31326  PASS
+     2: 254, 001, 000, 29263  PASS
+  green
+     1: 002, 241, 012, 19755  PASS
+     2: 002, 240, 013, 19232  PASS
+  blue
+     1: 001, 014, 240, 42982  PASS
+     2: 001, 016, 238, 41286  PASS
+standby
+  accelero voltage: 1.6V  PASS
+  magneto voltage: 0.1V  PASS
+  psu current:     -114.2uA
+  standby current: 0.7uA  PASS
+Programming application firmware    
+  unlocking    PASS
+  programming bold-firmware-rev3-v137-complete.hex    PASS
+Security
+  model and type: 0x06010000    PASS
+  device id:      0x000000000001F536 (128310)    PASS
+  key 1:      PASS
+  key 2:      PASS
+  key 3:      PASS
+  key 4:      PASS
+  enable readback protection    PASS
+BLE application advertising
+  address 128310 found
+  manufacturer id found
+  RSSI: -40  PASS
+Test time: 66.1sec
+Test successful

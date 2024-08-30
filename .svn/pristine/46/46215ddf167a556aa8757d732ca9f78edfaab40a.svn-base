@@ -1,0 +1,93 @@
+'''
+Created on Apr 20, 2018
+
+@author: PhilipsRefurb Tester
+'''
+from pprint import pprint
+
+from settings.settings import CascadedSettings
+
+
+class SettingsGeneral(CascadedSettings):
+    def __init__(self, inifile=''):
+        self.inifile = inifile
+
+    # read settings from settings.ini file
+    def get_settings(self):
+        self.readSettings()
+        try:
+            self.general = {}
+            self.general['logdir'] = self.get('general', 'logdir')
+            self.general['testerid'] = self.get('general', 'testerid')
+            self.general['log_csv'] = self.getboolean('general', 'log_csv')
+            self.general['log_text'] = self.getboolean('general', 'log_text')
+
+            self.general['stamp_delay'] = self.getfloat('general', 'stamp_delay')
+            self.general['barcode_length'] = self.getint('general', 'barcode_length')
+            self.general['barcode_prefix'] = self.get('general', 'barcode_prefix')
+
+            self.serial_dut = {}
+            self.serial_dut['comport'] = self.get('serial dut', 'comport')
+
+            self.serial_led = {}
+            self.serial_led['comport'] = self.get('led analyser', 'comport')
+            self.serial_led['enabled'] = self.getboolean('led analyser', 'enabled')
+
+            self.psu = {}
+            self.psu['vid'] = self.get('Keysight E36103A', 'usb_vid')
+            self.psu['pid'] = self.get('Keysight E36103A', 'usb_pid')
+            # self.psu['current_max'] = self.getfloat('psu', 'current_max')
+
+            self.dmm = {}
+            self.dmm['address'] = self.getint('Keysight 34970A', 'gpib_address')
+
+            self.ble = {}
+            self.ble['comport'] = self.get('bluetooth', 'comport')
+            self.ble['rssi_min'] = self.getfloat('bluetooth', 'rssi_min')
+            self.ble['scan_timeout'] = self.getfloat('bluetooth', 'scan_timeout')
+            self.ble['retries'] = self.getint('bluetooth', 'retries')
+
+
+            self.firmware = {}
+            self.firmware['nrfjprog_path'] = self.get('firmware', 'nrfjprog_path')
+            self.firmware['firmware_path'] = self.get('firmware', 'firmware_path')
+            self.firmware['hex_app'] = self.get('firmware', 'hex_app')
+            self.firmware['program_app'] = self.getboolean('firmware', 'program_app')
+            self.firmware['expected_version'] = self.getint('firmware', 'expected_version')
+
+            self.ledtest = {}
+            self.ledtest['analyzer_enable'] = self.getboolean('led', 'led_analyzer_enable')
+            self.ledtest['brightness_level'] = self.getint('led', 'brightness_level')
+            _uileds_limits = ['color_off_max', 'red_min', 'green_min',  'blue_min', 'intensity_min', 'intensity_max']
+            for key in _uileds_limits:
+                self.ledtest[key] = self.getint('led', key)
+
+            self.microphone = {}
+            self.microphone['enabled'] = self.getboolean('microphone', 'enabled')
+            self.microphone['min_db_delta'] = self.getfloat('microphone', 'min_db_delta')
+
+            self.limits = {}
+            _limitkeys = ['startup_current_max', 'startup_voltage_min', 'battery_voltage_fw_min', 'battery_voltage_fw_max',
+                          'motor_lr_current_min_abs', 'motor_lr_psu_current_min', 'motor_disable_psu_current_max',
+                          'accelero_x_min', 'accelero_x_max', 'accelero_y_min', 'accelero_y_max', 'accelero_z_min', 'accelero_z_max',
+                          'magneto_val1_min', 'magneto_val1_max', 'magneto_val2_min', 'magneto_val2_max',
+                          'accelero_voltage_on_min', 'accelero_voltage_off_max', 'magneto_voltage_on_min', 'magneto_voltage_off_max',
+                          'buzzer_min_level', 'buzzer_delta_min', 'standby_current_max']
+            for key in _limitkeys:
+                self.limits[key] = self.getfloat('limits', key)
+
+            self.security = {}
+            self.security['enabled'] = self.getboolean('security', 'program_security')
+            self.security['keys_file'] = self.get('security', 'keys_file')
+            self.security['model_and_type'] = self.get('security', 'model_and_type')
+
+            self.button = {}
+            self.button['activate_delay'] = self.getfloat('button', 'activate_delay')
+            self.button['deactivate_delay'] = self.getfloat('button', 'deactivate_delay')
+
+
+        except Exception as e:      # all errors, capture exception in e
+            print(e)
+            return (False, str(e))  # return exception type 'e'
+
+        return (True, None)

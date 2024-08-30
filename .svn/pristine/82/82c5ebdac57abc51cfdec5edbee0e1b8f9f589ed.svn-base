@@ -1,0 +1,429 @@
+#!/usr/local/bin/python
+# Low level SCPI commands for the Agilent 34970A scanning DMM
+#
+# PdV 17-09-2012
+#
+#
+# Updates
+#    17-09-2014    34907A port output defined
+#    19-06-2013    34905A RF mux added, relay cycles 34903 / 34905 / dmm
+#
+# boilerplate code for using either as Python module / main()
+
+from pprint import pprint
+import sys
+import time
+
+import visa
+
+
+class Instrument_34970A():
+    # constructor, open and init gpib channel, init inistrument
+    def __init__(self, board = 0, addr = 10):
+        try :
+            rm = visa.ResourceManager()
+            res = rm.list_resources()
+            self.DMM_handle = rm.open_resource('GPIB{:d}::{:d}::INSTR'.format(board, addr))
+
+            # instrument in FactoryReset state , reset status bits
+            self.DMM_handle.write('*RST ; *CLS')
+            self.error = False
+        except visa.VisaIOError :
+            print('Error instrument 34970A GPIB address')
+            self.error = True
+
+
+    # send command to instrument
+    # read response
+    def Query(self,command = '*IDN?'):
+#         print('sending command:', command)
+        self.DMM_handle.write(command)
+        time.sleep(0.1)     # recovery time
+        return self.DMM_handle.read()
+
+    # configure 34901A channel and measure DC voltage
+    # board      = '100' or '200' or '300'
+    # channel    = 1 .... 20
+    # range      = '0.1' or '1' or '10' or '100' or '300' or 'AUTO'
+    # resolution = '4.5' or '5.5' or '6.5'
+    # Input resistance defaults to 10M in all DC ranges
+    def Measure_Volt_DC(self,
+                        board = '100',
+                        channel = 1,
+                        rng = '100',
+                        resolution = '4.5'):
+        if board not in '100200300' :
+            print ('Error instrument 34901A board address')
+            self.error = True
+            return None
+
+        if rng != "0.1" and rng != "1" and rng != "10" and rng != "100" and rng != "300"\
+           and rng.upper() != 'AUTO' :
+            print ('Error instrument 34901A DMM range Error')
+            self.error = True
+            return None
+
+        if resolution != '4.5' and resolution != '5.5' and resolution != '6.5' :
+            print ('Error instrument 34901A DMM resolution Error')
+            self.error = True
+            return None
+
+        # prepare the command string
+        if resolution == '4.5' : self.res = 'MAX'
+        elif resolution == '5.5' : self.res = 'DEF'
+        else : self.res = 'MIN'
+
+#            self.DMM_handle.write( ' + range + ',' + resolution + '(@' + channel + ')')
+#        print ('MEAS:VOLT:DC? ' + range + ',' + self.res + ',(@' + str(channel+int(board)) + ')')
+        return float(self.Query('MEAS:VOLT:DC? ' + rng + ',' + self.res + ',(@' + str(channel+int(board)) + ')'))
+
+
+
+    # configure 34901A channel and measure AC voltage
+    # board      = '100' or '200' or '300'
+    # channel    = 1 .... 20
+    # range      = '0.1' or '1' or '10' or '100' or '300' or 'AUTO'
+    # input frequency defaults to 20...300kHz
+    def Measure_Volt_AC(self,board = '100', channel = 1, rng = '100'):
+        if board not in '100200300' :
+            print >> sys.stderr, 'Error instrument 34901A board address'
+            self.error = True
+            return None
+
+        if rng != "0.1" and rng != "1" and rng != "10" and rng != "100" and rng != "300"\
+           and rng.upper() != 'AUTO' :
+            print >> sys.stderr, 'Error instrument 34901A DMM range Error'
+            self.error = True
+            return None
+
+#            self.DMM_handle.write( ' + range + ',' + resolution + '(@' + channel + ')')
+#        print ('MEAS:VOLT:DC? ' + range + ',' + self.res + ',(@' + str(channel+int(board)) + ')')
+        return float(self.Query('MEAS:VOLT:AC? ' + rng + ',' + '(@' + str(channel+int(board)) + ')'))
+
+
+    # configure 34901A channel and measure Resistance
+    # board      = '100' or '200' or '300'
+    # channel    = 1 .... 20
+    def Measure_Ohm(self,board = '100', channel = 1):
+        if board not in '100200300' :
+            print('Error instrument 34901A board address')
+            self.error = True
+            return None
+
+        return float(self.Query('MEAS:RES? (@' + str(channel+int(board)) + ')'))
+#         return float(self.Query('MEAS:RES? (@112)')  )
+
+
+    # configure 34901A channel and measure Frequency
+    # board      = '100' or '200' or '300'
+    # channel    = 1 .... 20
+    # range      = '0.1' or '1' or '10' or '100' or '300' or 'AUTO'
+    # lower input frequency defaults to 20...300kHz
+    # resolution is MIN
+    def Measure_Frequency(self,board = '100', channel = 1,rng='10'):
+        if board not in '100200300' :
+            print >> sys.stderr, 'Error instrument 34901A board address'
+            self.error = True
+            return None
+
+        if channel < 1 or channel > 20 :
+            print >> sys.stderr, 'Error instrument 34901A channel'
+            self.error = True
+            return None
+
+        if rng != "0.1" and rng != "1" and rng != "10" and rng != "100" and rng != "300"\
+           and rng.upper() != 'AUTO' :
+            print >> sys.stderr, 'Error instrument 34901A DMM range Error'
+            self.error = True
+            return None
+
+#        return float(self.Query('MEAS:FREQ? ' + range + ','+ 'MIN,(@' + str(channel+int(board)) + ')'))
+        return float(self.Query('MEAS:FREQ? 10,deF,(@105)'))
+
+
+    # Monitor the frequency from channel.
+    # Measuring frequency from DC shifted signals is tricky
+    # with the 34970A, seems the instrument first search for
+    # decent level and than start the measurement.
+    # This function samples the channel 10 times, when
+    # no signal discovered an delay is inserted
+    def Monitor_Frequency(self,board = '100', channel = 1):
+        if board not in '100200300' :
+            print >> sys.stderr, 'Error instrument 34901A board address'
+            self.error = True
+            return None
+
+        if channel < 1 or channel > 20 :
+            print >> sys.stderr, 'Error instrument 34901A channel'
+            self.error = True
+            return None
+
+        # define the channel
+        self.DMM_handle.write('CONF:freq MIN, (@' + str(channel+int(board)) + ')')
+        # select voltage range for the measurement
+        self.DMM_handle.write('SENS:freq:VOLT:RANG:AUTO ON,(@' + str(channel+int(board)) + ')')
+
+        # 3Hz ... 300kHz, slow response
+        self.DMM_handle.write('SENS:freq:RANG:LOW 200, (@' + str(channel+int(board)) + ')')
+        # select 6.5 digits
+        self.DMM_handle.write('SENS:FREQ:APER 1, (@' + str(channel+int(board)) + ')')
+
+
+
+        # define the monitoring
+        self.DMM_handle.write('ROUT:MON (@' + str(channel+int(board)) + ')')
+        self.DMM_handle.write('ROUT:MON:STATE ON')
+
+        q = 0
+        chan_average = 0.0
+        for n in range(10):
+            chan_dat = float(self.Query('ROUT:MON:DATA?'))
+            if chan_dat > 0.0 :
+                q+=1
+                chan_average += chan_dat
+            else :
+                time.sleep(2)
+#        print 'Average frequency = %.3f'%(chan_average/q)
+        self.DMM_handle.write('ROUT:MON:STATE OFF')
+        if q > 0 :
+            return chan_average/q
+        else : return 0.0
+
+    # return the DMM relay cycles
+    # the DMM itself contains 3 relays
+    def DMM_Relay_Cycles(self):
+        ry_list = (self.Query('DIAG:DMM:CYCL? ')).split(',')
+        int_list = []
+        for n in range(3) :
+            int_list.append(int(ry_list[n]))
+        return int_list
+
+    # return list with the relay cycles for this 34901A board
+    # to clear the relay cycles counter :
+    # CAL:SECURE:STATE OFF,HP034970
+    # DIAG:RELAY:CYCLES:CLEAR (@210:220)
+    # CAL:SECURE:STATE ON
+    def A34901A_Relay_Cycles(self,board='100'):
+        if board not in '100200300' :
+            print >> sys.stderr, 'Error instrument 34901A card address'
+            self.error = True
+        ry_list = (self.Query('DIAG:REL:CYCL? (@%s:%s)'%(str(int(board)+1),str(int(board)+20)))).split(',')
+        int_list = []
+        for n in range(20) :
+            int_list.append(int(ry_list[n]))
+        return int_list
+
+
+
+    # close channels on the 34903A actuator board
+    def A34903A_Close(self,board='200' ,channel=0):
+        if board not in '100200300' :
+            print >> sys.stderr, 'Error instrument 34903A card address'
+            self.error = True
+        elif channel > 20 :
+            print >> sys.stderr, 'Error instrument 34903A channel address'
+            self.error = True
+        else :
+            self.DMM_handle.write('ROUT:CLOSE (@%s)'%str(int(board) + channel))
+
+    # open channels on the 34903A actuator board
+    def A34903A_Open(self,board='200' ,channel=1):
+        if board not in '100200300' :
+            print >> sys.stderr, 'Error instrument 34903A card address'
+            self.error = True
+        elif channel > 20 :
+            print >> sys.stderr, 'Error instrument 34903A channel address'
+            self.error = True
+        else :
+            self.DMM_handle.write('ROUT:OPEN (@%s)'%str(int(board) + channel))
+
+
+    # return True when 34903A channel is closed
+    def A34903A_Check_Channel_Closed(self,board='200',channel=1):
+        if board not in '100200300' :
+            print >> sys.stderr, 'Error instrument 34903A card address'
+            self.error = True
+        elif channel > 20 :
+            print >> sys.stderr, 'Error instrument 34903A channel address'
+            self.error = True
+        else :
+            if self.Query('ROUT:CLOSE? (@%s)'%str(int(board) + channel)) == '1' :
+                return True
+            else :
+                return False
+
+
+    # return list with activated channels
+    def A34903A_Check_Channels(self, board='200'):
+        self.channel_list=[]
+        self.actuators_closed = self.Query('ROUT:CLOSE? (@%s:%s)'%(str(int(board)+1),str(int(board)+20)))
+
+        # check the string for active channels, skip the separator ','
+        for n in range(0,20):
+            if self.actuators_closed[n*2] == '1' :
+                self.channel_list.append(int(board) + n+1)
+        return self.channel_list
+
+    # return list with the relay cycles for this 34903A board
+    # to clear the relay cycles counter :
+    # CAL:SECURE:STATE OFF,HP034970
+    # DIAG:RELAY:CYCLES:CLEAR (@210:220)
+    # CAL:SECURE:STATE ON
+    def A34903A_Relay_Cycles(self,board='200'):
+        if board not in '100200300' :
+            print >> sys.stderr, 'Error instrument 34903A card address'
+            self.error = True
+        ry_list = (self.Query('DIAG:REL:CYCL? (@%s:%s)'%(str(int(board)+1),str(int(board)+20)))).split(',')
+        int_list = []
+        for n in range(20) :
+            int_list.append(int(ry_list[n]))
+        return int_list
+
+    # switch common to channel
+    # Board has two independent channels :
+    # 11-12-13-14 and 21-22-23-24
+    def A34905A_Channel(self,board='300',channel=11):
+        if board not in '100200300' :
+            print >> sys.stderr, 'Error instrument 34905A card address'
+            self.error = True
+        elif channel not in [11,12,13,14,21,22,23,24] :
+            print >> sys.stderr, 'Error instrument 34905A channel address'
+            self.error = True
+        else :
+            self.DMM_handle.write('ROUT:CLOSE (@%s)'%str(int(board) + channel))
+
+    # display the relay cycles for the RF mux relays
+    # ry : 11-12-13-14-98 // 21-22-23-24-99
+    def A34905A_Relay_Cycles(self,board='200'):
+        if board not in '100200300' :
+            print >> sys.stderr, 'Error instrument 34905A card address'
+            self.error = True
+        ry_list_11 = (self.Query('DIAG:REL:CYCL? (@%s:%s)'%(str(int(board)+11),str(int(board)+14)))).split(',')
+        ry_list_21 = (self.Query('DIAG:REL:CYCL? (@%s:%s)'%(str(int(board)+21),str(int(board)+24)))).split(',')
+        ry_list_98 = (self.Query('DIAG:REL:CYCL? (@%s)'%str(int(board)+98))).split(',')
+        ry_list_99 = (self.Query('DIAG:REL:CYCL? (@%s)'%str(int(board)+99))).split(',')
+        ry_list = ry_list_11 + ry_list_98 + ry_list_21 + ry_list_99
+        int_list = []
+        for n in range(10) :
+            int_list.append(int(ry_list[n]))
+        return int_list
+
+
+    # 34907A board, data input
+    # return TRUE if input level == '0'
+    def A34907A_Digital_Input(self,board='200',channel=1,pin=0):
+        if board not in '100200300' :
+            print >> sys.stderr, 'Error instrument 34907A card address'
+            self.error = True
+        elif channel not in [1,2] :
+            print >> sys.stderr, 'Error instrument 34907A channel address either 1 or 2'
+            self.error = True
+        elif pin not in [0,1,2,3,4,5,6,7] :
+            print >> sys.stderr, 'Error instrument 34907A bit address'
+            self.error = True
+        else :
+            mask = 1 << pin
+            temp = self.Query('SENS:DIG:DATA:BYTE? (@%s)'%str(int(board) + channel))
+            if int(float(temp)) & mask == 0x00 :
+                return True
+            else :
+                return False
+
+
+    # 34907A board, data output, ONLY 1 action per write !!
+    # send board,channel,pin and the value True||False
+    # to enable readback from the port we have to be shure it is in output mode
+    # this function will check and define output mode when needed
+    def A34907A_Digital_Output_bit(self, board='200', channel=2, pin=0, level=False):
+        if board not in '100200300' :
+            print('Error instrument 34907A card address')
+            self.error = True
+        elif channel not in [1,2] :
+            print('Error instrument 34907A channel address either 1 or 2')
+            self.error = True
+        elif pin not in [0,1,2,3,4,5,6,7] :
+            print('Error instrument 34907A bit address')
+            self.error = True
+        else :
+            # check if port already in output mode, if not perform write to define output
+            # SOUR:DIG:STATE => '1' => output
+            if int(float( self.Query('SOUR:DIG:STATE? (@' + str(int(board) + channel) +')'  ))) == 0 :
+#                 print 'switch port to output mode'
+                self.DMM_handle.write('SOUR:DIG:DATA:BYTE 255, (@' + str(int(board) + channel) +')'  )
+
+            # get current output byte state (make sure the output mode is set
+            current_value =  int(float( self.Query('SOUR:DIG:DATA:BYTE? (@' + str(int(board) + channel) +')'  )))
+#            print current_value
+
+            # find out waht pin to activate / decactivate
+            mask = 1 << pin
+            # make output active = LOW
+            if level == True :
+                new_value = current_value & ~mask
+            # make output inactive = high
+            if level == False :
+                new_value = current_value | mask
+
+            # perform actual write
+            self.DMM_handle.write('SOUR:DIG:DATA:BYTE ' + str(new_value) + ', (@' + str(int(board) + channel) +')'  )
+
+            current_value =  int(float( self.Query('SOUR:DIG:DATA:BYTE? (@' + str(int(board) + channel) +')'  )))
+
+
+
+
+
+#
+# if __name__ == '__main__' :
+#     dmm = Instrument_34970A(0,10)
+#
+#     print 'test'
+#     print dmm.Measure_Ohm('100',12)
+#
+#
+# # 34907A port definitions
+#     # input channels at (@201)
+#     JIG_DOWN = 6
+#
+#     # output channels at (@202)
+#     JIG_10E_CURRENT_SWITCH = 2      # jig must be down, else no connect !!
+#     JIG_NRESET = 3
+#     JIG_BUTTON_ACTIVE = 4
+#     JIG_CYLINDER = 6
+#     JIG_STAMP = 7
+#
+#     # Sytem INIT,
+#
+#     # Digital I/O the 34907A board
+#     # to use the digital output channel first declare that channel as output
+#     # by performing a dummy write to the selected channel
+# #    dmm.A34907A_Digital_Chan(board='200',channel=2,outputmode = True)
+#
+#     # sample until JIG down
+#     while dmm.A34907A_Digital_Input(board='200',channel=1,pin=JIG_DOWN) == False :
+#         pass
+#
+#
+#     if dmm.A34907A_Digital_Input(board='200',channel=1,pin=JIG_DOWN) == True :
+#         # activate the jig down
+#         dmm.A34907A_Digital_Output_bit('200',2,JIG_CYLINDER,True)
+#         # some stabile time
+#         time.sleep (2)
+#
+#
+#         # activate (low) pin 6
+#         dmm.A34907A_Digital_Output_bit('200',2,JIG_10E_CURRENT_SWITCH,True)
+#         time.sleep (2)
+#         dmm.A34907A_Digital_Output_bit('200',2,JIG_10E_CURRENT_SWITCH,False)
+#         time.sleep (2)
+#         dmm.A34907A_Digital_Output_bit('200',2,JIG_10E_CURRENT_SWITCH,True)
+#         time.sleep (2)
+#         dmm.A34907A_Digital_Output_bit('200',2,JIG_10E_CURRENT_SWITCH,False)
+#
+#     # release JIG
+#     dmm.A34907A_Digital_Output_bit('200',2,JIG_CYLINDER,False)
+#
+#
+#     print 'Done! '
+
+
